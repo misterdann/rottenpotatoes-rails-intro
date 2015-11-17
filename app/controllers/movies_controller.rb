@@ -1,6 +1,6 @@
 class MoviesController < ApplicationController
 
-  attr_accessor :sort_by
+  attr_accessor :sort_by, :all_ratings
   
   def movie_params
     params.require(:movie).permit(:title, :rating, :description, :release_date)
@@ -12,13 +12,20 @@ class MoviesController < ApplicationController
     # will render app/views/movies/show.<extension> by default
   end
 
+  #REFACTOR!!!
   def index
-    @movies = Movie.all if params[:sort_by].nil?
+    @all_ratings = Movie.get_ratings
+    if params[:ratings].nil?
+      @checked_ratings = @all_ratings
+    else
+      @checked_ratings = params[:ratings].keys
+    end
+    @movies = Movie.all.where(rating: @checked_ratings)
     @sort_by = params[:sort_by]
     if @sort_by == 'title'
-      @movies = Movie.all.order("title")
+      @movies = Movie.all.order(:title)
     elsif @sort_by == 'release'
-      @movies = Movie.all.order("release_date")
+      @movies = Movie.all.order(:release_date)
     end
   end
 
