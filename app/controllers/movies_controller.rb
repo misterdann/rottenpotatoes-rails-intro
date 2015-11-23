@@ -14,18 +14,27 @@ class MoviesController < ApplicationController
 
   #REFACTOR!!!
   def index
+    redirect_needed = params[:ratings].nil? && params[:sort_by].nil?
     @all_ratings = Movie.get_ratings
     if params[:ratings].nil?
-      @checked_ratings = @all_ratings
+      @checked_ratings = session[:checked_ratings].nil? ? @all_ratings : session[:checked_ratings]
+      params[:ratings] = @checked_ratings
     else
-      @checked_ratings = params[:ratings].keys
+      @checked_ratings = params[:ratings].class == Array ? params[:ratings] : params[:ratings].keys
     end
     @movies = Movie.all.where(rating: @checked_ratings)
+    params[:sort_by] = params[:sort_by].nil? ? session[:sort_by] : params[:sort_by]
     @sort_by = params[:sort_by]
     if @sort_by == 'title'
-      @movies = Movie.all.order(:title)
+      @movies = @movies.order(:title)
     elsif @sort_by == 'release'
-      @movies = Movie.all.order(:release_date)
+      @movies = @movies.order(:release_date)
+    end
+    session[:checked_ratings] = @checked_ratings
+    session[:sort_by] = @sort_by
+    if redirect_needed
+      flash.keep
+      redirect_to movies_path(:sort_by => @sort_by, :ratings => @checked_ratings)
     end
   end
 
