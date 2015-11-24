@@ -12,24 +12,15 @@ class MoviesController < ApplicationController
     # will render app/views/movies/show.<extension> by default
   end
 
-  #REFACTOR!!!
   def index
     redirect_needed = params[:ratings].nil? && params[:sort_by].nil?
     @all_ratings = Movie.get_ratings
-    if params[:ratings].nil?
-      @checked_ratings = session[:checked_ratings].nil? ? @all_ratings : session[:checked_ratings]
-      params[:ratings] = @checked_ratings
-    else
-      @checked_ratings = params[:ratings].class == Array ? params[:ratings] : params[:ratings].keys
-    end
+    @checked_ratings = getCheckedRatings(@all_ratings)
     @movies = Movie.all.where(rating: @checked_ratings)
-    params[:sort_by] = params[:sort_by].nil? ? session[:sort_by] : params[:sort_by]
-    @sort_by = params[:sort_by]
-    if @sort_by == 'title'
-      @movies = @movies.order(:title)
-    elsif @sort_by == 'release'
-      @movies = @movies.order(:release_date)
-    end
+    
+    @sort_by = params[:sort_by].nil? ? session[:sort_by] : params[:sort_by]
+    @movies = getSortedMovies(@sort_by, @movies)
+    
     session[:checked_ratings] = @checked_ratings
     session[:sort_by] = @sort_by
     if redirect_needed
@@ -64,6 +55,25 @@ class MoviesController < ApplicationController
     @movie.destroy
     flash[:notice] = "Movie '#{@movie.title}' deleted."
     redirect_to movies_path
+  end
+  
+  private
+  
+  def getCheckedRatings(all_ratings)
+    if params[:ratings].nil?
+      return session[:checked_ratings].nil? ? all_ratings : session[:checked_ratings]
+    else
+      return params[:ratings].class == Array ? params[:ratings] : params[:ratings].keys
+    end
+  end
+  
+  def getSortedMovies(sort_by, movies)
+    if sort_by == 'title'
+      return @movies.order(:title)
+    elsif sort_by == 'release'
+      return @movies.order(:release_date)
+    end
+    movies
   end
 
 end
